@@ -124,6 +124,10 @@ def test_onnx_local_classifier_inference(monkeypatch):
 
 
 def test_analyze_endpoint_with_onnx_live(monkeypatch):
+    from pathlib import Path
+    import pytest
+    if not Path('models/food_classifier.onnx').is_file():
+        pytest.skip('models/food_classifier.onnx not downloaded')
     monkeypatch.setenv('VISION_PROVIDER', 'auto')
     res = client.post('/api/analyze', json={'image_base64': image_b64()})
     assert res.status_code == 200

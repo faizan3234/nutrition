@@ -1,10 +1,14 @@
 name: Reliv Nutrition tests
 on:
   push:
+    branches: [ main ]
   pull_request:
+    branches: [ main ]
 jobs:
   tests:
     runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: .
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -17,6 +21,5 @@ jobs:
         with:
           node-version: '22'
       - run: node --check web/app.js
-
       - run: node --check admin/app.js
       - run: python -m scripts.audit_release_gates
