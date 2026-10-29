@@ -34,3 +34,27 @@ Coordinates are normalized 0–1 after EXIF orientation, minimum width/height .0
 Regression tests cover crop pixels/coordinates, bounded requests, ambiguous matches, classifier alternatives and partial failures. Tests use controlled model responses, not accuracy ground truth. Uploaded example JPEGs were decoded locally; none were committed or submitted to an external model. Food names, weights, recipe data and permission for reuse are not inferred as training labels.
 
 For measurable improvement, collect authorized scale-weighed recipes and region annotations, train licensed detector weights, and evaluate on independent kitchens/sessions. Measure class accuracy, detector mAP, mass MAE and nutrient errors separately. Exact nutrients cannot be promised from a photograph alone. Source-verified nutrient records and confirmed edible quantities remain essential.
+
+## Quantity provenance and leftovers follow-up
+
+Photo/classifier confidence is not measured nutrition accuracy. ONNX softmax values are now shown conservatively: top score below 0.5 or a top-two margin below 0.15 requires choosing a candidate instead of automatically selecting a dish. These thresholds are uncalibrated review heuristics, not validated confidence intervals; confident wrong predictions remain possible. No new recognition percentage is claimed.
+
+Each ordinary or batch meal log can include `quantity_basis`, `unit`, and `leftover_amount`. Existing clients remain supported and receive `unspecified` provenance. Example:
+
+```json
+{"profile":"example-user","food_id":"steamed-rice","grams":300,"leftover_amount":125,"quantity_basis":"scale","unit":"g","meal":"Lunch"}
+```
+
+This records 175 g consumed. A leftover amount and a non-100 consumed percentage cannot both be supplied. Leftovers must be nonnegative and smaller than served; remove an item if none was eaten. Both amounts must use the same edible-food basis, excluding containers and bones. Choosing `scale` or `measuring_container` records the user's statement, not independent sensor verification. Percent-eaten values can still be estimated even when the original serving was weighed.
+
+The source selection and leftover amount persist in SQLite and survive diary reloads. Old logs migrate without changing their nutrition totals. Diary entries display quantity provenance and nutrient source separately. A weighed portion using the illustrative catalogue remains an illustrative calorie/protein estimate.
+
+Explicit unit mismatches are rejected. `scale` cannot imply ml and `measuring_container` cannot imply grams; density conversion is not implemented. Photo-provider mass guesses for drinks are also discarded rather than relabelled as ml; a typical starting volume remains explicitly unmeasured. Unit remains optional for backward-compatible clients. Per-food quantities in a mixed plate remain independent. The batch endpoint validates all items before storing any.
+
+Nonfinite imported nutrient values are rejected. NaN protein must never enter a food record and silently corrupt daily totals.
+
+### Evidence for the follow-up
+
+API regression tests cover served-minus-leftover calculations, mixed-plate protein/calorie totals, persistence, old database migration, unit mismatches, atomic batch failure, uncertain classifier review and invalid imported values. `scripts/test_portion_ui.cjs` exercises real customer JavaScript in jsdom with mocked HTTP: leftovers, totals, confirmation reset, invalid inputs, liquid units and single/batch payloads. It is not a visual browser or mobile-camera test. CI installs pinned jsdom for this check.
+
+No weighed real-photo benchmark, calibrated portion model or verified nutrition dataset was created in this change. Recognition, mass and nutrient error metrics remain unmeasured. Before claiming reliable automatic tracking, run licensed model weights against an independent set with verified dish identities, edible scale weights, ingredient nutrition and cooked yields; report per-food errors and unknown-food failures, not just aggregate software pass counts.

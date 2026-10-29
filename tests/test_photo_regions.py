@@ -65,6 +65,8 @@ def test_classifier_runner_up_not_an_extra_dish():
     with patch('app.vision.get_onnx_session',return_value=(Session(),{0:'rice',1:'biryani',2:'pasta'})):
         items = infer_onnx(base64.b64decode(picture()))
     assert len(items) == 1
+    assert items[0]['requires_choice'] is True
+    assert items[0]['confidence'] == 'low'
     assert items[0]['alternatives'] == ['biryani','pasta']
 
 

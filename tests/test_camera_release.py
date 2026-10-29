@@ -134,5 +134,7 @@ def test_analyze_endpoint_with_onnx_live(monkeypatch):
     data = res.json()
     assert data['provider'] == 'onnx'
     assert len(data['items']) >= 1
-    assert data['items'][0]['food'] is not None
+    item = data['items'][0]
+    assert item['needs_confirmation'] is True
+    assert item['food'] is not None or item['requires_match'] is True
 
