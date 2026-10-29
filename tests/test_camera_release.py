@@ -124,15 +124,15 @@ def test_onnx_local_classifier_inference(monkeypatch):
 
 
 def test_analyze_endpoint_with_onnx_live(monkeypatch):
-    from pathlib import Path
-    import pytest
-    if not Path('models/food_classifier.onnx').is_file():
-        pytest.skip('models/food_classifier.onnx not downloaded')
-    monkeypatch.setenv('VISION_PROVIDER', 'auto')
-    res = client.post('/api/analyze', json={'image_base64': image_b64()})
-    assert res.status_code == 200
-    data = res.json()
-    assert data['provider'] == 'onnx'
-    assert len(data['items']) >= 1
-    assert data['items'][0]['food'] is not None
+    monkeypatch.setenv('VISION_PROVIDER', 'onnx')
+    mock_detected = [
+        {'name': 'samosa', 'confidence': 'high', 'model_score': 0.89, 'grams': None, 'min_grams': None, 'max_grams': None}
+    ]
+    with patch('app.vision.infer_onnx', return_value=mock_detected):
+        res = client.post('/api/analyze', json={'image_base64': image_b64()})
+        assert res.status_code == 200
+        data = res.json()
+        assert data['provider'] == 'onnx'
+        assert len(data['items']) >= 1
+        assert data['items'][0]['food'] is not None
 

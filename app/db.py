@@ -1,7 +1,8 @@
 import sqlite3
 import os
 from contextlib import contextmanager
-DB_PATH=os.getenv('NUTRITION_DB_PATH','./nutrition.sqlite3')
+DB_PATH = os.getenv('NUTRITION_DB_PATH', '/tmp/nutrition.sqlite3' if (os.getenv('VERCEL') or os.getenv('AWS_LAMBDA_FUNCTION_NAME')) else './nutrition.sqlite3')
+
 
 def init_db():
     with connection() as c:
@@ -22,9 +23,10 @@ def init_db():
             c.execute('ALTER TABLE meal_logs ADD COLUMN consumed_percent REAL')
         c.execute('CREATE INDEX IF NOT EXISTS meal_logs_idx ON meal_logs(profile,created_at)')
 
+
 @contextmanager
 def connection():
-    c=sqlite3.connect(DB_PATH)
+    c = sqlite3.connect(DB_PATH)
     c.row_factory=sqlite3.Row
     try:
         yield c;c.commit()

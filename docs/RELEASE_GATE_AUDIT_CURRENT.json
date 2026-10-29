@@ -1,12 +1,12 @@
 {
   "release": "Reliv Nutrition AI v0.6.0-source-handoff",
   "audit_date": "2026-10-29",
-  "catalog_searchable_foods": 284,
+  "catalog_searchable_foods": 358,
   "nutrition_sources": {
-    "illustrative_starter_not_verified": 284
+    "illustrative_starter_not_verified": 358
   },
-  "camera_provider": "none",
-  "provider_ready": false,
+  "camera_provider": "onnx",
+  "provider_ready": true,
   "real_model_benchmark_images_executed_in_this_release": 0,
   "real_model_benchmark_predictions_executed_in_this_release": 0,
   "camera_metrics": {

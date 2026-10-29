@@ -550,12 +550,15 @@ def set_groq_key(req:GroqKeyRequest):
     os.environ['GROQ_API_KEY'] = clean_key
     env_path = BASE / '.env'
     if env_path.is_file():
-        content = env_path.read_text(encoding='utf-8')
-        if 'GROQ_API_KEY=' in content:
-            new_content = re.sub(r'GROQ_API_KEY=.*', f'GROQ_API_KEY={clean_key}', content)
-        else:
-            new_content = content + f'\nGROQ_API_KEY={clean_key}\n'
-        env_path.write_text(new_content, encoding='utf-8')
+        try:
+            content = env_path.read_text(encoding='utf-8')
+            if 'GROQ_API_KEY=' in content:
+                new_content = re.sub(r'GROQ_API_KEY=.*', f'GROQ_API_KEY={clean_key}', content)
+            else:
+                new_content = content + f'\nGROQ_API_KEY={clean_key}\n'
+            env_path.write_text(new_content, encoding='utf-8')
+        except OSError:
+            pass  # Read-only filesystem in serverless environments like Vercel
     return {'ok': True, 'message': 'Groq API key saved! Camera food recognition is now active.'}
 
 @app.get('/api/admin/learning/triage')

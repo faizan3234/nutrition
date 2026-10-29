@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+.pytest_cache/
+*.sqlite3
+*.pyc
+.env
+.git/
+Git_History/
+tests/
+models/*.onnx
+models/*.pt
+models/*.h5
+models/*.bin
+private_learning_images/
+training/exports/
+evidence/
