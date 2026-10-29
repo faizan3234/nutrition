@@ -4,6 +4,7 @@ Per-100 g for solids; per-100 ml for Drinks/Mocktails (legacy field names remain
 """
 from dataclasses import dataclass, asdict
 from decimal import Decimal, ROUND_HALF_UP
+import math
 import re
 import csv
 import os
@@ -396,7 +397,7 @@ def load_authorized_csv(path:str):
                 raise ValueError('Every imported food must have a name and provenance/source')
             slug=re.sub(r'[^a-z0-9]+','-',row['name'].lower()).strip('-')
             nums={k:float(row[k]) for k in ('kcal','protein','carbs','fat')}
-            if any(v<0 or v>1000 for v in nums.values()):raise ValueError('Invalid nutrition value for '+slug)
+            if any(not math.isfinite(v) or v<0 or v>1000 for v in nums.values()):raise ValueError('Invalid nutrition value for '+slug)
             grams=int(row.get('default_grams') or 100)
             if not (1<=grams<=5000):raise ValueError('Invalid default_grams')
             new={'id':slug,'name':row['name'].strip(),**nums,'default_grams':grams,

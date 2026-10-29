@@ -20,4 +20,6 @@ def nutrition_quality(source:str, weight_basis:str='manual') -> dict:
     return {'tier':tier,'label':label,'warning':warning,
             'weight_basis':weight_basis,
             'measured_weight':weight_basis=='scale',
+            'measurement_verified':False,
+            'measurement_note':'Quantity basis is user-reported, not independently verified.',
             'accuracy_validated':False}

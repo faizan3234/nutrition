@@ -12,7 +12,9 @@ from .catalog import FOODS, LOOKUP, search_foods, nutrients, serving_unit
 from .db import connection,init_db
 from .personalization import initialize as initialize_personalization, save_plate, get_plate, add_shortcut, list_shortcuts, shortcut_meal
 from .quality import nutrition_quality
+from .portions import PortionInput
 from .vision import analyze
+from .photo_regions import analyze_regions, PhotoRegion
 from .packaged import lookup_barcode, search_products, scaled_product
 from .restaurants import search_restaurants, estimate_restaurant
 from .textlog import parse_entry
@@ -38,6 +40,7 @@ def service_worker():
     return FileResponse(BASE/'web'/'sw.js',media_type='application/javascript',headers={'Service-Worker-Allowed':'/'})
 
 class PhotoRequest(BaseModel):
+    regions:list[PhotoRegion]=Field(default_factory=list,max_length=6)
     image_base64:str=Field(min_length=100,max_length=10_500_000)
     secondary_image_base64:str|None=Field(default=None,max_length=10_500_000)
     plate_diameter_cm:float|None=Field(default=None,ge=10,le=40)
@@ -47,21 +50,17 @@ def eaten_amount(served_amount: float, consumed_percent: float) -> float:
     return float((Decimal(str(served_amount)) * Decimal(str(consumed_percent)) / Decimal('100'))
                  .quantize(Decimal('0.01'), rounding=ROUND_HALF_UP))
 
-class LogRequest(BaseModel):
+class LogRequest(PortionInput):
     profile:str=Field(min_length=8,max_length=100,pattern=r'^[a-zA-Z0-9_-]+$')
     food_id:str
-    grams:float=Field(gt=0,le=5000) # presented/served amount
-    consumed_percent:float=Field(default=100,gt=0,le=100)
     meal:str=Field(pattern=r'^(Breakfast|Lunch|Dinner|Snacks)$')
 class ProductLogRequest(BaseModel):
     profile:str=Field(min_length=8,max_length=100,pattern=r'^[a-zA-Z0-9_-]+$')
     barcode:str=Field(pattern=r'^\d{8,14}$')
     amount:float=Field(gt=0,le=5000)
     meal:str=Field(pattern=r'^(Breakfast|Lunch|Dinner|Snacks)$')
-class BatchItem(BaseModel):
+class BatchItem(PortionInput):
     food_id:str
-    grams:float=Field(gt=0,le=5000) # presented/served amount
-    consumed_percent:float=Field(default=100,gt=0,le=100)
     meal:str=Field(pattern=r'^(Breakfast|Lunch|Dinner|Snacks)$')
 class BatchLogRequest(BaseModel):
     profile:str=Field(min_length=8,max_length=100,pattern=r'^[a-zA-Z0-9_-]+$')
@@ -130,7 +129,10 @@ def log_product(req:ProductLogRequest,request:Request):
 
 @app.post('/api/analyze')
 def photo(req:PhotoRequest):
-    try:return analyze(req.image_base64,req.secondary_image_base64,req.plate_diameter_cm)
+    try:
+        if req.regions:
+            return analyze_regions(req.image_base64, req.regions)
+        return analyze(req.image_base64,req.secondary_image_base64,req.plate_diameter_cm)
     except ValueError as e:raise HTTPException(status_code=400,detail=str(e))
     except Exception as e:
         # Never expose server secrets or third-party responses.
@@ -140,14 +142,17 @@ def log(req:LogRequest,request:Request):
     authorized_profile(request.headers,req.profile)
     f=LOOKUP.get(req.food_id) or get_approved_food(req.food_id)
     if not f:raise HTTPException(status_code=404,detail='Unknown food')
-    consumed=eaten_amount(req.grams,req.consumed_percent)
+    try:req.check_unit(serving_unit(f))
+    except ValueError as exc:raise HTTPException(422,str(exc))
+    consumed=req.consumed_amount()
     nutrition=nutrients(f,consumed)
     rec={'id':str(uuid.uuid4()),'profile':req.profile,'food_id':f['id'],'food_name':f['name'],
-         'grams':consumed,'served_amount':req.grams,'consumed_percent':req.consumed_percent,
-         'unit':serving_unit(f),'source':f['source'],'nutrition_quality':nutrition_quality(f['source']),'meal':req.meal,**nutrition,'created_at':datetime.now(timezone.utc).isoformat()}
+         'grams':consumed,'served_amount':req.grams,'consumed_percent':req.consumption_percent(),
+         'quantity_basis':req.quantity_basis,'leftover_amount':req.leftover_amount,
+         'unit':serving_unit(f),'source':f['source'],'nutrition_quality':nutrition_quality(f['source'],req.quantity_basis),'meal':req.meal,**nutrition,'created_at':datetime.now(timezone.utc).isoformat()}
     with connection() as c:
-        c.execute("""INSERT INTO meal_logs (id,profile,food_id,food_name,grams,meal,kcal,protein,carbs,fat,created_at,unit,source,served_amount,consumed_percent) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-                  tuple(rec[k] for k in ('id','profile','food_id','food_name','grams','meal','kcal','protein','carbs','fat','created_at','unit','source','served_amount','consumed_percent')))
+        c.execute("""INSERT INTO meal_logs (id,profile,food_id,food_name,grams,meal,kcal,protein,carbs,fat,created_at,unit,source,served_amount,consumed_percent,quantity_basis,leftover_amount) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                  tuple(rec[k] for k in ('id','profile','food_id','food_name','grams','meal','kcal','protein','carbs','fat','created_at','unit','source','served_amount','consumed_percent','quantity_basis','leftover_amount')))
     return rec
 @app.post('/api/log/batch',status_code=201)
 def batch_log(req:BatchLogRequest,request:Request):
@@ -157,17 +162,20 @@ def batch_log(req:BatchLogRequest,request:Request):
     for item in req.items:
         f=LOOKUP.get(item.food_id) or get_approved_food(item.food_id)
         if not f:raise HTTPException(status_code=404,detail='Unknown food: '+item.food_id)
-        eaten=eaten_amount(item.grams,item.consumed_percent)
+        try:item.check_unit(serving_unit(f))
+        except ValueError as exc:raise HTTPException(422,str(exc))
+        eaten=item.consumed_amount()
         entries.append({'id':str(uuid.uuid4()),'profile':req.profile,'food_id':f['id'],
              'food_name':f['name'],'grams':eaten,'served_amount':item.grams,
-             'consumed_percent':item.consumed_percent,'meal':item.meal,
-             'unit':serving_unit(f),'source':f['source'],'nutrition_quality':nutrition_quality(f['source']),
+             'consumed_percent':item.consumption_percent(),'meal':item.meal,
+             'quantity_basis':item.quantity_basis,'leftover_amount':item.leftover_amount,
+             'unit':serving_unit(f),'source':f['source'],'nutrition_quality':nutrition_quality(f['source'],item.quantity_basis),
              **nutrients(f,eaten),'created_at':datetime.now(timezone.utc).isoformat()})
     with connection() as c:
         c.executemany('''INSERT INTO meal_logs
-            (id,profile,food_id,food_name,grams,meal,kcal,protein,carbs,fat,created_at,unit,source,served_amount,consumed_percent)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', [tuple(r[k] for k in
-            ('id','profile','food_id','food_name','grams','meal','kcal','protein','carbs','fat','created_at','unit','source','served_amount','consumed_percent')) for r in entries])
+            (id,profile,food_id,food_name,grams,meal,kcal,protein,carbs,fat,created_at,unit,source,served_amount,consumed_percent,quantity_basis,leftover_amount)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', [tuple(r[k] for k in
+            ('id','profile','food_id','food_name','grams','meal','kcal','protein','carbs','fat','created_at','unit','source','served_amount','consumed_percent','quantity_basis','leftover_amount')) for r in entries])
     return {'count':len(entries),'items':entries,
             'totals':{k:round(sum(r[k] for r in entries),1) for k in ('kcal','protein','carbs','fat')}}
 
@@ -179,6 +187,8 @@ def day(request:Request,profile:str=Query(min_length=8,max_length=100,pattern=r'
     with connection() as c:
         rows=c.execute('SELECT * FROM meal_logs WHERE profile=? ORDER BY created_at DESC',(profile,)).fetchall()
     items=[dict(r) for r in rows if (datetime.fromisoformat(r['created_at'])-timedelta(minutes=offset_minutes)).date().isoformat()==date]
+    for item in items:
+        item['nutrition_quality']=nutrition_quality(item['source'],item['quantity_basis'])
     totals={k:round(sum(item[k] for item in items),1) for k in ('kcal','protein','carbs','fat')}
     return {'date':date,'items':items,'totals':totals,'note':'Day grouping uses browser-provided UTC offset.'}
 @app.delete('/api/log/{log_id}',status_code=200)

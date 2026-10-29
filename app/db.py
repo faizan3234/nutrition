@@ -20,6 +20,10 @@ def init_db():
             c.execute('ALTER TABLE meal_logs ADD COLUMN served_amount REAL')
         if 'consumed_percent' not in existing:
             c.execute('ALTER TABLE meal_logs ADD COLUMN consumed_percent REAL')
+        if 'quantity_basis' not in existing:
+            c.execute("ALTER TABLE meal_logs ADD COLUMN quantity_basis TEXT NOT NULL DEFAULT 'unspecified'")
+        if 'leftover_amount' not in existing:
+            c.execute('ALTER TABLE meal_logs ADD COLUMN leftover_amount REAL')
         c.execute('CREATE INDEX IF NOT EXISTS meal_logs_idx ON meal_logs(profile,created_at)')
 
 @contextmanager

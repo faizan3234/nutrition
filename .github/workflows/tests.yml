@@ -22,4 +22,6 @@ jobs:
           node-version: '22'
       - run: node --check web/app.js
       - run: node --check admin/app.js
+      - run: npm install --prefix "$RUNNER_TEMP/reliv-ui" jsdom@30.1.3 --no-audit --no-fund
+      - run: NODE_PATH="$RUNNER_TEMP/reliv-ui/node_modules" node scripts/test_portion_ui.cjs
       - run: python -m scripts.audit_release_gates
