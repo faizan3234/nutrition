@@ -1,0 +1,6 @@
+desktop errors [] tiles 1
+desktop result 1 productUI 1 JS errs []
+desktop restaurant/text/reference UI rendered; no JS errors
+mobile errors [] tiles 1
+mobile result 1 productUI 1 JS errs []
+mobile restaurant/text/reference UI rendered; no JS errors

@@ -1,0 +1,21 @@
+{
+  "status": "pass",
+  "foods": 193,
+  "weights_g": [
+    5,
+    25,
+    50,
+    75,
+    100,
+    150,
+    200,
+    300,
+    500,
+    900
+  ],
+  "nutrient_arithmetic_checks": 7720,
+  "passed": 7720,
+  "failed": 0,
+  "failures": [],
+  "interpretation": "Only verifies deterministic per-100g scaling of illustrative table. No photographed meals, weighed portions, independently measured calories or model predictions were used."
+}

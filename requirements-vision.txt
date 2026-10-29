@@ -1,0 +1,4 @@
+-r requirements.txt
+# Optional local zero-shot image classification. Downloads model on first run.
+transformers>=4.46,<6
+torch>=2.3

@@ -1,0 +1,21 @@
+RELIV NUTRITION AI — ALL-IN-ONE PROJECT
+
+START HERE: Open README.md in this folder for full setup instructions.
+
+Includes:
+- Customer nutrition website (web/)
+- Administrator learning and corrections portal (admin/)
+- Python API / nutrition calculations (app/)
+- Food catalog and training data tools (data/, training/, scripts/)
+- Automated tests (tests/)
+- Full documentation, checklists, accuracy and release reports (docs/)
+- Deployment configuration (Dockerfile, docker-compose.yml, requirements.txt)
+- Full Git repository history bundle (Git_History/)
+
+IMPORTANT: Real-photo model accuracy, actual food detection mAP, and automatic
+food weight accuracy have NOT been independently validated.
+The food catalog includes illustrative nutrition data.
+Do not advertise the tracker as medically or scientifically validated
+or as the most accurate on the market.
+
+The original live Reliv website has not been modified or deployed by this ZIP.

@@ -1,0 +1,49 @@
+{
+  "release": "Reliv Nutrition AI v0.6.0-source-handoff",
+  "audit_date": "2026-10-29",
+  "catalog_searchable_foods": 284,
+  "nutrition_sources": {
+    "illustrative_starter_not_verified": 284
+  },
+  "camera_provider": "none",
+  "provider_ready": false,
+  "real_model_benchmark_images_executed_in_this_release": 0,
+  "real_model_benchmark_predictions_executed_in_this_release": 0,
+  "camera_metrics": {
+    "top1_accuracy": null,
+    "mAP50": null,
+    "mAP50_95": null,
+    "portion_mass_mae_g": null,
+    "portion_100g_vs_300g_confusion_matrix": null,
+    "calorie_mae_kcal": null,
+    "protein_mae_g": null
+  },
+  "evidence_expected": {
+    "independent_classification": "evidence\\recognition_heldout.json",
+    "independent_detection": "evidence\\detection_heldout.json",
+    "measured_portion_regression": "evidence\\portion_heldout.json",
+    "source_verified_nutrition": "evidence\\food_source_audit.json",
+    "deployed_mobile_qa": "evidence\\device_qa.json",
+    "deployment_security_review": "evidence\\security_qa.json",
+    "comparative_competitor_study": "evidence\\competitor_comparison.json"
+  },
+  "evidence_present": {
+    "independent_classification": false,
+    "independent_detection": false,
+    "measured_portion_regression": false,
+    "source_verified_nutrition": false,
+    "deployed_mobile_qa": false,
+    "deployment_security_review": false,
+    "comparative_competitor_study": false
+  },
+  "production_gate_passed": false,
+  "primary_blockers": [
+    "No trained approved weights/API inference verified against held-out labeled photos",
+    "No independent Indian-meal weighed-portion results",
+    "Illustrative catalogue not replaced by vetted food composition source",
+    "Production auth integration and security review remain untested on deployment",
+    "Real Android/iPhone verification and competitor comparative trials incomplete"
+  ],
+  "claim_allowed": "Software prototype with validated arithmetic and tested API code",
+  "claim_prohibited": "Highest accuracy, exact food weighing, market leading, all foods recognized, medically validated"
+}

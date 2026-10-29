@@ -1,0 +1,108 @@
+{
+  "as_of": "2026-10-29",
+  "version": "v0.4.0",
+  "catalog_searchable_foods": 193,
+  "catalog_values": "illustrative_unverified",
+  "software_tests_passed": 37,
+  "software_tests_total": 37,
+  "nutrient_arithmetic_passed": 7720,
+  "nutrient_arithmetic_total": 7720,
+  "engineering_checklist": {
+    "completed": 150,
+    "pending": 139,
+    "total": 289,
+    "scope": "engineering checklist not camera accuracy",
+    "sections": [
+      {
+        "name": "01 \u00b7 Repository & architecture",
+        "completed": 12,
+        "pending": 3
+      },
+      {
+        "name": "02 \u00b7 Indian and international food coverage",
+        "completed": 14,
+        "pending": 6
+      },
+      {
+        "name": "03 \u00b7 Packaged food / beverage lookup",
+        "completed": 15,
+        "pending": 7
+      },
+      {
+        "name": "04 \u00b7 Photograph capture",
+        "completed": 10,
+        "pending": 6
+      },
+      {
+        "name": "05 \u00b7 Food recognition",
+        "completed": 8,
+        "pending": 12
+      },
+      {
+        "name": "06 \u00b7 Portion and food mass",
+        "completed": 7,
+        "pending": 13
+      },
+      {
+        "name": "07 \u00b7 Nutrition provenance and formulas",
+        "completed": 9,
+        "pending": 11
+      },
+      {
+        "name": "08 \u00b7 Meal diary and dashboard",
+        "completed": 14,
+        "pending": 6
+      },
+      {
+        "name": "09 \u00b7 Browser and device quality",
+        "completed": 9,
+        "pending": 8
+      },
+      {
+        "name": "10 \u00b7 Unit and integration tests",
+        "completed": 22,
+        "pending": 7
+      },
+      {
+        "name": "11 \u00b7 Benchmark design",
+        "completed": 9,
+        "pending": 11
+      },
+      {
+        "name": "12 \u00b7 Training and optimization",
+        "completed": 4,
+        "pending": 14
+      },
+      {
+        "name": "13 \u00b7 Security, privacy, and compliance",
+        "completed": 8,
+        "pending": 13
+      },
+      {
+        "name": "14 \u00b7 Deployment and release",
+        "completed": 7,
+        "pending": 12
+      },
+      {
+        "name": "15 \u00b7 Market-leading accuracy claims",
+        "completed": 2,
+        "pending": 10
+      }
+    ]
+  },
+  "camera_images_tested_against_ground_truth": 0,
+  "automatically_weighed_foods_validated": 0,
+  "model_weights_bundled": false,
+  "vision_provider_live_inference_run": false,
+  "measured_top1_accuracy": null,
+  "measured_detection_map50": null,
+  "measured_detection_map50_95": null,
+  "measured_weight_mae_g": null,
+  "measured_calorie_mae_kcal": null,
+  "measured_protein_mae_g": null,
+  "branded_api_live_test": false,
+  "branded_api_mocked_tests": true,
+  "mobile_browser_ui_automation": "real_live_served_url_blocked; mocked DOM tested",
+  "reason": "No licensed image/weight benchmark and no executable trained vision model available in local runtime.",
+  "ui_dom_mock_smoke": "desktop_and_mobile_passed"
+}

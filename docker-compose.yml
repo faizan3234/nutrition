@@ -1,0 +1,16 @@
+services:
+  nutrition:
+    build: .
+    ports:
+      - "127.0.0.1:8000:8000" # bind locally; place behind authenticated HTTPS reverse proxy
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      NUTRITION_DB_PATH: /srv/data/nutrition.sqlite3
+      RELIV_LEARNING_IMAGE_DIR: /srv/data/private_learning_images
+    volumes:
+      - nutrition_data:/srv/data
+    restart: unless-stopped
+volumes:
+  nutrition_data:

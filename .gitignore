@@ -1,0 +1,22 @@
+.env
+*.sqlite3
+__pycache__/
+.pytest_cache/
+.venv/
+.DS_Store
+*.pt
+*.h5
+*.bin
+*.safetensors
+*.onnx
+dataset/
+artifacts/
+models/*.onnx
+models/*.pt
+models/*.h5
+models/*.bin
+!models/food_labels.json
+
+# Private food images are not public deployment assets or repository data.
+private_learning_images/
+training/exports/
