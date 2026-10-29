@@ -50,6 +50,7 @@ def infer_yolo(image:bytes):
     for item in prediction.boxes:
         idx=int(item.cls[0]);score=float(item.conf[0])
         out.append({'name':str(names[idx]).replace('_',' '),'grams':None,
+                    'bbox':[round(float(v), 5) for v in item.xyxyn[0]],
                     'min_grams':None,'max_grams':None,'model_score':score,
                     'confidence':'low'})
     return out[:12]

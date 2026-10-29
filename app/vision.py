@@ -113,17 +113,8 @@ def infer_onnx(image: bytes) -> list[dict]:
         'model_score': round(top_score, 4)
     }]
 
-    second_idx = int(top_indices[1])
-    second_score = float(probs[second_idx])
-    if second_score > 0.15:
-        items.append({
-            'name': labels.get(second_idx, 'unknown'),
-            'grams': None,
-            'min_grams': None,
-            'max_grams': None,
-            'confidence': 'medium',
-            'model_score': round(second_score, 4)
-        })
+    # Runner-up classes describe alternatives for the SAME image, not extra food.
+    items[0]['alternatives'] = [labels.get(int(i), 'unknown') for i in top_indices[1:4]]
 
     return items
 
@@ -384,12 +375,14 @@ def analyze(image_b64: str, secondary_image_b64: str | None = None,
         if not isinstance(obj, dict):
             continue
         label = str(obj.get('name', ''))[:100].strip()
-        food = match_food_flexible(label) if label and label.lower() != 'unknown' else None
+        food = match_food_exact(label) if label and label.lower() != 'unknown' else None
         if not food:
             result.append({
                 'detected_name': label or 'unknown',
                 'food': None,
                 'requires_match': True,
+                'candidates': search_foods(label, 5),
+                'bbox': obj.get('bbox'),
                 'grams': None,
                 'confidence': 'low',
                 'needs_confirmation': True
@@ -406,6 +399,8 @@ def analyze(image_b64: str, secondary_image_b64: str | None = None,
 
         result.append({
             'detected_name': label,
+            'bbox': obj.get('bbox'),
+            'alternatives': obj.get('alternatives', []),
             'food': food,
             'requires_match': False,
             'grams': grams if grams is not None else food['default_grams'],
@@ -425,7 +420,7 @@ def analyze(image_b64: str, secondary_image_b64: str | None = None,
         'items': result,
         'reference_candidates': reference['candidates'],
         'message': (
-            'Estimated, NOT weighed. Verify each dish and grams before logging. ' +
+            'Suggestions, NOT measured nutrition. Check every food, recipe and quantity. Whole-image classifiers may miss sides; select separate regions for mixed plates. ' +
             ('A second angle and plate size may reduce uncertainty.' if len(images) == 1 else
              'Two photos were captured, but food weight is still an estimate.')
         )

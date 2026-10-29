@@ -13,6 +13,7 @@ from .db import connection,init_db
 from .personalization import initialize as initialize_personalization, save_plate, get_plate, add_shortcut, list_shortcuts, shortcut_meal
 from .quality import nutrition_quality
 from .vision import analyze
+from .photo_regions import analyze_regions, PhotoRegion
 from .packaged import lookup_barcode, search_products, scaled_product
 from .restaurants import search_restaurants, estimate_restaurant
 from .textlog import parse_entry
@@ -38,6 +39,7 @@ def service_worker():
     return FileResponse(BASE/'web'/'sw.js',media_type='application/javascript',headers={'Service-Worker-Allowed':'/'})
 
 class PhotoRequest(BaseModel):
+    regions:list[PhotoRegion]=Field(default_factory=list,max_length=6)
     image_base64:str=Field(min_length=100,max_length=10_500_000)
     secondary_image_base64:str|None=Field(default=None,max_length=10_500_000)
     plate_diameter_cm:float|None=Field(default=None,ge=10,le=40)
@@ -130,7 +132,10 @@ def log_product(req:ProductLogRequest,request:Request):
 
 @app.post('/api/analyze')
 def photo(req:PhotoRequest):
-    try:return analyze(req.image_base64,req.secondary_image_base64,req.plate_diameter_cm)
+    try:
+        if req.regions:
+            return analyze_regions(req.image_base64, req.regions)
+        return analyze(req.image_base64,req.secondary_image_base64,req.plate_diameter_cm)
     except ValueError as e:raise HTTPException(status_code=400,detail=str(e))
     except Exception as e:
         # Never expose server secrets or third-party responses.

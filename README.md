@@ -308,3 +308,7 @@ Current recorded results and caveats are in **`docs/FINAL_RELEASE_VERIFICATION.m
 - Deployment and commercial use require project-owner configuration, verified data, licensed models, and real-world testing. **No repository package alone can guarantee exact calories from every food photograph.**
 
 © Reliv Nutrition AI contributors. See `LICENSE` (applies to the project's original code only, not external brands, weights, images or nutrition databases).
+
+## Mixed-plate photo review
+
+The Scan screen now supports up to six user-selected food regions, individual quantity confirmation and explicit matching for ambiguous names. See [Mixed plates, drinks and leftovers](docs/MIXED_PLATE_PHOTOS.md) for examples, API fields and limitations. This is recognition assistance using the configured model, not a newly trained detector or validated photograph-to-weight estimator.
