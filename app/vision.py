@@ -17,7 +17,8 @@ import os
 import re
 import urllib.request
 from PIL import Image, ImageOps
-from .catalog import LOOKUP, search_foods
+from .catalog import LOOKUP, search_foods, serving_unit
+from .quality import nutrition_quality
 
 MAX_IMAGE_BYTES = 7_000_000
 
@@ -102,7 +103,10 @@ def infer_onnx(image: bytes) -> list[dict]:
     top_idx = int(top_indices[0])
     top_score = float(probs[top_idx])
     label_name = labels.get(top_idx, 'unknown')
-    conf = 'high' if top_score > 0.3 else ('medium' if top_score > 0.1 else 'low')
+    # Softmax is not calibrated probability of correct food identity.
+    runner_up = float(probs[int(top_indices[1])]) if len(top_indices) > 1 else 0.0
+    ambiguous = top_score < 0.5 or top_score - runner_up < 0.15
+    conf = 'low'
 
     items = [{
         'name': label_name,
@@ -110,7 +114,8 @@ def infer_onnx(image: bytes) -> list[dict]:
         'min_grams': None,
         'max_grams': None,
         'confidence': conf,
-        'model_score': round(top_score, 4)
+        'model_score': round(top_score, 4),
+        'requires_choice': ambiguous
     }]
 
     # Runner-up classes describe alternatives for the SAME image, not extra food.
@@ -376,12 +381,19 @@ def analyze(image_b64: str, secondary_image_b64: str | None = None,
             continue
         label = str(obj.get('name', ''))[:100].strip()
         food = match_food_exact(label) if label and label.lower() != 'unknown' else None
-        if not food:
+        if not food or obj.get('requires_choice'):
+            candidates = []
+            for name in [label, *obj.get('alternatives', [])][:4]:
+                exact = match_food_exact(name)
+                for candidate in ([exact] if exact else search_foods(name, 5)):
+                    if candidate['id'] not in {f['id'] for f in candidates}:
+                        candidates.append(candidate)
             result.append({
                 'detected_name': label or 'unknown',
                 'food': None,
                 'requires_match': True,
-                'candidates': search_foods(label, 5),
+                'candidates': candidates[:8],
+                'recognition_reason': 'uncertain_classifier' if obj.get('requires_choice') else 'unmatched_label',
                 'bbox': obj.get('bbox'),
                 'grams': None,
                 'confidence': 'low',
@@ -392,6 +404,9 @@ def analyze(image_b64: str, secondary_image_b64: str | None = None,
         grams = _weight(obj.get('grams'))
         low = _weight(obj.get('min_grams'))
         high = _weight(obj.get('max_grams'))
+        # Provider grams cannot be relabelled as liquid ml without density.
+        if serving_unit(food) == 'ml':
+            grams = low = high = None
         if low is not None and high is not None and low > high:
             low, high = high, low
         if grams is not None and (low is None or high is None):
@@ -401,7 +416,8 @@ def analyze(image_b64: str, secondary_image_b64: str | None = None,
             'detected_name': label,
             'bbox': obj.get('bbox'),
             'alternatives': obj.get('alternatives', []),
-            'food': food,
+            'food': {**food, 'nutrition_quality': nutrition_quality(food['source'])},
+            'unit': serving_unit(food),
             'requires_match': False,
             'grams': grams if grams is not None else food['default_grams'],
             'min_grams': low,
