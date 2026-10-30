@@ -25,6 +25,8 @@ from .learning import (initialize as initialize_learning,authorize_admin,create_
 
 BASE=Path(__file__).resolve().parent.parent
 app=FastAPI(title='Reliv Nutrition AI',version='0.6.0',description='Camera-ready prototype with explicit uncertainty and configurable vision')
+from .coach import router as coach_router
+app.include_router(coach_router)
 origins=[x.strip() for x in os.getenv('CORS_ALLOWED_ORIGINS','').split(',') if x.strip()]
 if origins:
     app.add_middleware(CORSMiddleware,allow_origins=origins,allow_methods=['GET','POST','PUT','DELETE'],allow_headers=['Content-Type','Authorization'])
